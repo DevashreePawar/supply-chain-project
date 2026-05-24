@@ -1,0 +1,80 @@
+{
+  "name": "Supply Chain Analytics Dashboard",
+  "sheets": [
+    {
+      "name": "Operations Overview",
+      "type": "dashboard",
+      "description": "Weekly order trends and KPIs",
+      "datasource": "weekly_orders_clean.csv",
+      "viz_type": "line_chart",
+      "dimensions": [
+        "order_week"
+      ],
+      "measures": [
+        "order_count",
+        "total_gross_sales"
+      ]
+    },
+    {
+      "name": "Shipping Performance",
+      "type": "dashboard",
+      "description": "Shipping mode analysis",
+      "datasource": "shipping_modes.csv",
+      "viz_type": "bar_chart",
+      "dimensions": [
+        "shipping_mode"
+      ],
+      "measures": [
+        "order_count",
+        "on_time_percent"
+      ]
+    },
+    {
+      "name": "Inventory Health",
+      "type": "dashboard",
+      "description": "Stock-out risk by category",
+      "datasource": "inventory_health.csv",
+      "viz_type": "table",
+      "dimensions": [
+        "category_id"
+      ],
+      "measures": [
+        "current_stock",
+        "forecast_demand_4w",
+        "gap"
+      ]
+    },
+    {
+      "name": "Demand Forecast",
+      "type": "dashboard",
+      "description": "4-week forecast with confidence intervals",
+      "datasource": "forecast_4w_clean.csv",
+      "viz_type": "line_chart",
+      "dimensions": [
+        "week"
+      ],
+      "measures": [
+        "forecast",
+        "lower_80",
+        "upper_80"
+      ]
+    }
+  ],
+  "filters": [
+    {
+      "name": "category_filter",
+      "type": "single_value",
+      "column": "category_id"
+    },
+    {
+      "name": "date_filter",
+      "type": "date_range",
+      "column": "week"
+    }
+  ],
+  "colors": {
+    "primary": "#003f5c",
+    "secondary": "#ffa600",
+    "neutral": "#a5a5a5"
+  }
+}

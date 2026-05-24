@@ -1,0 +1,29 @@
+
+// Tableau Connection Template - Follow these steps:
+
+1. Open Tableau Public Desktop
+2. Click "Connect to Data" → "Text File"
+3. Navigate to: ~/Documents/supply-chain-project/data/
+4. Select: forecast_4w_clean.csv (start here)
+
+5. In Data Source tab:
+   - Verify columns: week, category_id, forecast, lower_80, upper_80
+   - Change "week" data type to: Date
+   
+6. Create new connections for:
+   - data/shipping_modes.csv
+   - data/inventory_health.csv
+   - data/weekly_orders_clean.csv
+
+7. Build 4 sheets (see dashboard_config.json)
+
+8. Create dashboard combining all 4 sheets
+
+9. Add filters: Category ID, Date Range
+
+10. Style with colors:
+    - Primary: #003f5c (navy)
+    - Secondary: #ffa600 (amber)
+    - Neutral: #a5a5a5
+
+11. Publish to Tableau Public
