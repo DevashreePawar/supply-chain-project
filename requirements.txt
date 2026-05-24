@@ -1,0 +1,19 @@
+# ============================================================================
+# Python dependencies for the dbt + Streamlit pipeline.
+#
+# Install locally:
+#     python -m venv .venv
+#     .venv/bin/pip install -r requirements.txt
+#
+# Used by GitHub Actions for the CI + Docs workflows.
+# ============================================================================
+
+# --- dbt (data transformation layer) ---
+dbt-core>=1.11,<1.12
+dbt-snowflake>=1.11,<1.12
+
+# --- Environment + secrets loading ---
+python-dotenv>=1.0
+
+# --- Snowflake direct connection (used by Streamlit app + ad-hoc scripts) ---
+snowflake-connector-python>=3.0
