@@ -64,7 +64,11 @@ data/*.csv.orig
 .Rproj.user/
 
 # dbt
-target/
+# Allow target/ directory itself, but ignore everything inside it EXCEPT
+# manifest.json + catalog.json (needed by the Streamlit app's LLM context).
+target/*
+!target/manifest.json
+!target/catalog.json
 dbt_packages/
 logs/
 .user.yml

@@ -1,0 +1,17 @@
+# Streamlit theme — navy + amber to match the Tableau dashboard color palette.
+# Avoids the default red Streamlit branding for a more professional look.
+
+[theme]
+primaryColor = "#ffa600"            # amber accent (buttons, links)
+backgroundColor = "#0e1117"          # near-black (matches dbt docs site)
+secondaryBackgroundColor = "#1c2330" # slightly lighter navy for sidebars
+textColor = "#fafafa"                # off-white
+font = "sans serif"
+
+[server]
+# Don't auto-open browser when running locally (we'll open it manually)
+headless = true
+
+[browser]
+# Don't send usage telemetry to Streamlit
+gatherUsageStats = false

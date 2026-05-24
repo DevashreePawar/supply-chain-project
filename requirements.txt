@@ -17,3 +17,12 @@ python-dotenv>=1.0
 
 # --- Snowflake direct connection (used by Streamlit app + ad-hoc scripts) ---
 snowflake-connector-python>=3.0
+
+# --- Streamlit app (Phase 3) ---
+streamlit>=1.40
+pandas>=2.0
+altair>=5.0
+
+# --- OpenAI (added in Session 6 for NL → SQL) ---
+openai>=1.50
+tiktoken>=0.8
