@@ -1,0 +1,38 @@
+# dbt profiles for the supply_chain project.
+#
+# All sensitive values are read from environment variables (loaded from .env
+# by the run-dbt.sh wrapper). Nothing here is a real secret — safe to commit.
+#
+# Usage:
+#   ./run-dbt.sh debug          # test connection
+#   ./run-dbt.sh run            # run all models
+#   ./run-dbt.sh test           # run all tests
+#   ./run-dbt.sh docs generate  # build the docs site
+
+supply_chain:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account:   "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:      "{{ env_var('SNOWFLAKE_USER') }}"
+      password:  "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role:      "{{ env_var('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE') }}"
+      database:  "{{ env_var('SNOWFLAKE_DATABASE') }}"
+      schema:    "{{ env_var('SNOWFLAKE_SCHEMA') }}"
+      threads: 4
+      client_session_keep_alive: false
+
+    # CI profile — used by GitHub Actions. Same credentials, separate schema
+    # so PR runs never touch the dev or prod data.
+    ci:
+      type: snowflake
+      account:   "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:      "{{ env_var('SNOWFLAKE_USER') }}"
+      password:  "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role:      "{{ env_var('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE') }}"
+      database:  "{{ env_var('SNOWFLAKE_DATABASE') }}"
+      schema: DBT_CI
+      threads: 4

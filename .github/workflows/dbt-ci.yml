@@ -1,0 +1,92 @@
+name: dbt CI
+
+# When to run this workflow:
+#   - on every push to main (so main is always known-green)
+#   - on every pull request targeting main (so PRs are gated by tests)
+on:
+  push:
+    branches: [main]
+    paths:                  # only run when dbt-relevant files change
+      - 'models/**'
+      - 'macros/**'
+      - 'tests/**'
+      - 'analyses/**'
+      - 'seeds/**'
+      - 'dbt_project.yml'
+      - 'profiles.yml'
+      - '.github/workflows/dbt-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'models/**'
+      - 'macros/**'
+      - 'tests/**'
+      - 'analyses/**'
+      - 'seeds/**'
+      - 'dbt_project.yml'
+      - 'profiles.yml'
+      - '.github/workflows/dbt-ci.yml'
+
+# Cancel any in-flight run for the same ref when a new push lands
+concurrency:
+  group: dbt-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test dbt Models
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dbt-snowflake
+        run: |
+          python -m pip install --upgrade pip
+          pip install 'dbt-snowflake>=1.9'
+
+      - name: dbt deps
+        run: dbt deps
+        env:
+          DBT_PROFILES_DIR: ${{ github.workspace }}
+
+      - name: dbt debug (test connection)
+        env:
+          DBT_PROFILES_DIR: ${{ github.workspace }}
+          # Snowflake creds — pulled from GitHub repo secrets
+          SNOWFLAKE_ACCOUNT:   ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER:      ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD:  ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE:      ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE:  ${{ secrets.SNOWFLAKE_DATABASE }}
+          # CI profile uses its own schema (DBT_CI) so it never touches dev/prod
+          SNOWFLAKE_SCHEMA:    DBT_CI
+        run: dbt debug --target ci
+
+      - name: dbt build (run models + tests)
+        env:
+          DBT_PROFILES_DIR: ${{ github.workspace }}
+          SNOWFLAKE_ACCOUNT:   ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER:      ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD:  ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE:      ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE:  ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA:    DBT_CI
+        run: dbt build --target ci --no-partial-parse
+
+      - name: Upload dbt artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-target-${{ github.run_id }}
+          path: target/
+          retention-days: 7

@@ -1,0 +1,93 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: "Date dimension covering 2014-12-29 onward. 1,500 days."
+    columns:
+      - name: date_day
+        description: "Primary key — the date itself"
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_product
+    description: "Product dimension (~118 distinct products). Includes derived price_band."
+    columns:
+      - name: product_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: price_band
+        description: "Derived bucket: Low (<$50), Mid ($50-$200), High (>=$200)"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Low', 'Mid', 'High']
+
+  - name: dim_customer
+    description: "Customer dimension (~20.6K customers) with cohort attributes."
+    columns:
+      - name: customer_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+
+  - name: fct_orders
+    description: "The central fact table. One row per order_item (180,519 rows)."
+    columns:
+      - name: order_item_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "FK to dim_customer"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_id
+      - name: product_id
+        description: "FK to dim_product"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_id
+      - name: order_date
+        description: "FK to dim_date"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: shipping_mode
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Standard Class', 'Second Class', 'First Class', 'Same Day']
+
+  - name: agg_weekly_orders
+    description: "Weekly aggregate by category. Feeds the forecasting notebook."
+    columns:
+      - name: order_week
+        data_tests:
+          - not_null
+      - name: category_id
+        data_tests:
+          - not_null
+
+  - name: agg_shipping_scorecard
+    description: "Shipping mode × region scorecard. Feeds the Tableau dashboard."
+    columns:
+      - name: shipping_mode
+        data_tests:
+          - not_null
+      - name: region
+        data_tests:
+          - not_null

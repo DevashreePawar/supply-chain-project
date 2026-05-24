@@ -6,6 +6,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 build/
 develop-eggs/
@@ -61,6 +62,12 @@ data/*.csv.orig
 .Rhistory
 .RData
 .Rproj.user/
+
+# dbt
+target/
+dbt_packages/
+logs/
+.user.yml
 
 # Temporary
 *.tmp

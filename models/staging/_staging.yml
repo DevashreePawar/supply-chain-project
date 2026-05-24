@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: "Cleaned order-item feed. Grain: one row per order_item."
+    columns:
+      - name: order_item_id
+        description: "Primary key — unique per row"
+        data_tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: "Order ID (multiple rows per order if multi-item)"
+        data_tests:
+          - not_null
+      - name: customer_id
+        description: "Foreign key to stg_customers"
+        data_tests:
+          - not_null
+      - name: product_id
+        description: "Foreign key to stg_products"
+        data_tests:
+          - not_null
+      - name: shipping_mode
+        description: "Shipping tier"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Standard Class', 'Second Class', 'First Class', 'Same Day']
+      - name: is_late_flag
+        description: "1 if DELIVERY_STATUS = 'Late delivery', else 0"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+      - name: is_on_time_flag
+        description: "1 if shipping_days_actual <= shipping_days_scheduled, else 0"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+
+  - name: stg_products
+    description: "Deduplicated product catalog (~118 unique products)"
+    columns:
+      - name: product_id
+        description: "Primary key"
+        data_tests:
+          - not_null
+
+  - name: stg_customers
+    description: "Deduplicated customer dimension (~20.6K customers). PII excluded."
+    columns:
+      - name: customer_id
+        description: "Primary key"
+        data_tests:
+          - not_null
+      - name: customer_segment
+        description: "Consumer | Corporate | Home Office"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Consumer', 'Corporate', 'Home Office']

@@ -1,0 +1,36 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw landing tables loaded directly from CSV via Snowflake's UI"
+    database: SUPPLY_CHAIN
+    schema: RAW
+    tables:
+      - name: dataco_orders
+        description: "DataCo Supply Chain dataset — 180,519 order-item rows from Kaggle, 2014-2018"
+        columns:
+          - name: order_id
+            description: "Order identifier (multiple rows per order if multi-item)"
+          - name: order_item_id
+            description: "Unique row identifier — primary key of the raw table"
+            data_tests:
+              - unique
+              - not_null
+          - name: order_customer_id
+            description: "Customer who placed the order"
+            data_tests:
+              - not_null
+          - name: product_card_id
+            description: "Product identifier"
+            data_tests:
+              - not_null
+          - name: order_date
+            description: "Order timestamp (string in raw, cast to TIMESTAMP in staging)"
+          - name: shipping_mode
+            description: "Standard Class | Second Class | First Class | Same Day"
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['Standard Class', 'Second Class', 'First Class', 'Same Day']
+          - name: delivery_status
+            description: "Late delivery | Shipping on time | Advance shipping | Shipping canceled"

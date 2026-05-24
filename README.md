@@ -1,9 +1,16 @@
 # Supply Chain Analytics: Database → Forecast → Dashboard
 
-An end-to-end data analytics pipeline for supply chain optimization. Loads 180K+ orders into Snowflake, transforms into a star schema, forecasts demand with Prophet, and visualizes on an interactive Tableau dashboard.
+[![dbt CI](https://github.com/DevashreePawar/supply-chain-project/actions/workflows/dbt-ci.yml/badge.svg)](https://github.com/DevashreePawar/supply-chain-project/actions/workflows/dbt-ci.yml)
+[![dbt Docs](https://github.com/DevashreePawar/supply-chain-project/actions/workflows/dbt-docs.yml/badge.svg)](https://devashreepawar.github.io/supply-chain-project/)
+[![dbt](https://img.shields.io/badge/dbt-1.11-orange?logo=dbt)](https://www.getdbt.com/)
+[![Snowflake](https://img.shields.io/badge/Snowflake-data%20warehouse-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
 
-**Status:** ✅ Complete (May 2026)  
-**Live Dashboard:** [Tableau Public](https://public.tableau.com/app/profile/devashree.pawar/viz/SupplyChain_17795849723580/Dashboard1)
+An end-to-end **modern data stack** project for supply chain analytics. 180K+ orders flow through a tested dbt pipeline in Snowflake, get forecast with Prophet, and visualize on Tableau Public.
+
+**Live links:**
+- 📊 **[Tableau Dashboard](https://public.tableau.com/app/profile/devashree.pawar/viz/SupplyChain_17795849723580/Dashboard1)**
+- 📖 **[dbt Docs Site](https://devashreepawar.github.io/supply-chain-project/)** (auto-deployed lineage graph + column-level docs)
+- 🧪 **[CI Pipeline](https://github.com/DevashreePawar/supply-chain-project/actions)** (48 tests run on every PR)
 
 ---
 
@@ -93,7 +100,7 @@ supply-chain-project/
 
 1. **Clone repo**
    ```bash
-   git clone https://github.com/devashreepawar/supply-chain-project.git
+   git clone https://github.com/DevashreePawar/supply-chain-project.git
    cd supply-chain-project
    ```
 
@@ -351,7 +358,7 @@ See `notebooks/FORECASTING_EXPLAINED.md` for full methodology.
 ## 🔗 Links
 
 - **Live Dashboard:** [Tableau Public](https://public.tableau.com/app/profile/devashree.pawar/viz/SupplyChain_17795849723580/Dashboard1)
-- **GitHub:** [supply-chain-project](https://github.com/devashreepawar/supply-chain-project)
+- **GitHub:** [supply-chain-project](https://github.com/DevashreePawar/supply-chain-project)
 - **Snowflake Setup:** [sql/README.md](sql/README.md)
 - **Notebook:** [notebooks/forecasting.ipynb](notebooks/forecasting.ipynb)
 - **Memo:** [memo/stakeholder_memo.pdf](memo/stakeholder_memo.pdf)
