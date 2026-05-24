@@ -1,445 +1,329 @@
-# Supply Chain Analytics: Database → Forecast → Dashboard
+# Supply Chain Analytics — End-to-End Modern Data Stack
 
 [![dbt CI](https://github.com/DevashreePawar/supply-chain-project/actions/workflows/dbt-ci.yml/badge.svg)](https://github.com/DevashreePawar/supply-chain-project/actions/workflows/dbt-ci.yml)
 [![dbt Docs](https://github.com/DevashreePawar/supply-chain-project/actions/workflows/dbt-docs.yml/badge.svg)](https://devashreepawar.github.io/supply-chain-project/)
+[![Streamlit App](https://img.shields.io/badge/Streamlit-Live%20App-FF4B4B?logo=streamlit&logoColor=white)](https://supply-chain-data.streamlit.app/)
 [![dbt](https://img.shields.io/badge/dbt-1.11-orange?logo=dbt)](https://www.getdbt.com/)
 [![Snowflake](https://img.shields.io/badge/Snowflake-data%20warehouse-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
+[![OpenAI](https://img.shields.io/badge/GPT--4o--mini-NL%E2%86%92SQL-412991?logo=openai&logoColor=white)](https://platform.openai.com/)
 
-An end-to-end **modern data stack** project for supply chain analytics. 180K+ orders flow through a tested dbt pipeline in Snowflake, get forecast with Prophet, and visualize on Tableau Public.
-
-**Live links:**
-- 📊 **[Tableau Dashboard](https://public.tableau.com/app/profile/devashree.pawar/viz/SupplyChain_17795849723580/Dashboard1)**
-- 📖 **[dbt Docs Site](https://devashreepawar.github.io/supply-chain-project/)** (auto-deployed lineage graph + column-level docs)
-- 🧪 **[CI Pipeline](https://github.com/DevashreePawar/supply-chain-project/actions)** (48 tests run on every PR)
+> 180K orders → dbt-tested Snowflake warehouse → walk-forward-validated forecasts → Tableau dashboard → **AI app where you ask questions in plain English**.
 
 ---
 
-## 📊 Project Overview
+## 🌐 Live Demos
 
-### Problem Statement
-Supply chain teams struggle with:
-- **Late deliveries** (38.1% Standard Class on-time rate vs. 95.3% First Class)
-- **Stock-outs** (all top-5 categories face 4-week inventory gaps)
-- **Utilization** (Same Day shipping underutilized, carrying fixed costs)
-
-### Solution
-Build a **data-driven insights pipeline** that:
-1. Ingests 180,519 orders into Snowflake data warehouse
-2. Transforms into analytics-ready star schema (fct_orders + 3 dimensions)
-3. Generates 4-week demand forecasts by category (Prophet, 80% confidence intervals)
-4. Flags inventory risks and shipping bottlenecks
-5. Visualizes on interactive Tableau dashboard with drill-down capability
+| | URL | What it shows |
+|---|---|---|
+| 🤖 **AI Query App** | **[supply-chain-data.streamlit.app](https://supply-chain-data.streamlit.app/)** | Ask questions in English; GPT-4o-mini writes safe SQL against the dbt schema |
+| 📖 **dbt Docs Site** | **[devashreepawar.github.io/supply-chain-project](https://devashreepawar.github.io/supply-chain-project/)** | Auto-generated docs with column-level descriptions + lineage graph |
+| 📊 **Tableau Dashboard** | **[Tableau Public](https://public.tableau.com/app/profile/devashree.pawar/viz/SupplyChain_17795849723580/Dashboard1)** | 4-page interactive dashboard with filters and drill-down |
+| 🧪 **CI Pipeline** | **[GitHub Actions](https://github.com/DevashreePawar/supply-chain-project/actions)** | 48 tests run on every PR; docs auto-deploy to GitHub Pages |
 
 ---
 
-## 🗂️ Project Structure
+## 🏗️ Architecture
+
+```
+                     ┌─────────────────────────────────────────────┐
+                     │  GitHub Actions CI                          │
+                     │  ✓ dbt build + 48 tests on every push       │
+                     │  ✓ dbt docs auto-deploy to GitHub Pages     │
+                     └─────────────────────────────────────────────┘
+                                       │
+   ┌────────────┐                      ▼                      ┌────────────────────┐
+   │ DataCo CSV │ ──► Snowflake ──► dbt (9 models, 39 tests) ──┤ AI Query App      │
+   │  180,519   │     SUPPLY_CHAIN    │       │                │  Streamlit +      │
+   │  orders    │                     │       │                │  GPT-4o-mini      │
+   └────────────┘                     │       │                │  + SQL safety     │
+                                      │       │                └────────────────────┘
+                                      │       │
+                                      │       ▼
+                                      │  ┌─────────────────────────┐
+                                      │  │ Forecasting Package     │
+                                      │  │ - 4 models benchmarked  │
+                                      │  │ - Walk-forward CV       │
+                                      │  │ - Stock-out risk scores │
+                                      │  └─────────────────────────┘
+                                      ▼
+                                ┌──────────────┐
+                                │ Tableau      │
+                                │ Public       │
+                                │ Dashboard    │
+                                └──────────────┘
+```
+
+---
+
+## 🧰 Tech Stack
+
+| Layer | Tool | What it does here |
+|---|---|---|
+| **Storage** | Snowflake | 180,519 orders, star schema, separate `DBT_DEV` / `DBT_CI` schemas |
+| **Transformation** | **dbt 1.11** | 3 staging views + 6 marts tables + 6 analyses, ref()-based DAG |
+| **Data Quality** | dbt tests | 36 generic (unique, not_null, accepted_values, FK relationships) + 3 custom singular tests |
+| **CI/CD** | GitHub Actions | Auto-test on PR, auto-deploy docs to GitHub Pages |
+| **Forecasting** | Custom Python pkg | Naive + Seasonal Naive + Prophet + SARIMA behind one interface, walk-forward CV |
+| **AI / NL→SQL** | OpenAI GPT-4o-mini | Reads dbt schema from `manifest.json`, generates safe SELECT queries |
+| **App Framework** | Streamlit | Free deployment, prompt-caching enabled, ~$0.0003 per query |
+| **Dashboard** | Tableau Public | 4-page interactive dashboard |
+| **Memo** | Markdown → PDF | 3-finding executive summary with quantified impact |
+
+---
+
+## 🎯 What Makes This Project Notable
+
+### 1. The AI layer reads from dbt — single source of truth
+
+The Streamlit app's LLM prompt is built dynamically from `target/manifest.json` (dbt's documentation artifact). When you update a column description in `models/marts/_marts.yml`, the AI gets smarter automatically. No code change, no prompt edit. This is the modern data stack flywheel working end-to-end.
+
+### 2. Forecast rigor — Naive beats Prophet on 3 of 5 categories
+
+The original notebook reported MAPE of 168-481% from a single Prophet model. The v2 rigor pass added walk-forward cross-validation across 4 models — **actual median MAPE is 6.7-15.6%**, and Naive wins on most categories. Prophet only meaningfully helps on the largest category (-29.5% vs Naive on cat 17).
+
+> The v1 numbers were a non-rigorous holdout calculation, not a real validation. Catching this kind of thing is exactly what walk-forward CV exists for. See [FORECASTING_EXPLAINED.md](notebooks/FORECASTING_EXPLAINED.md).
+
+### 3. Reframed forecasting from point estimates to risk scores
+
+Instead of *"order 472 units of category 45"* (false precision when intervals are wide), the deliverable is *"current stock-out risk is 99.99% — to keep risk under 5%, order 1,656 units"*. Decision-relevant under uncertainty. See [`data/stockout_risk_scores.csv`](data/stockout_risk_scores.csv).
+
+### 4. Defense-in-depth SQL safety on the AI app
+
+Three layers prevent the LLM from ever writing destructive SQL:
+1. System prompt instructs SELECT-only
+2. Regex-based [`streamlit_app/safety.py`](streamlit_app/safety.py) rejects DDL/DML keywords, strips comments + string literals before matching, rejects multi-statement queries, auto-adds `LIMIT 5000`
+3. Snowflake role permissions (in production: a read-only role)
+
+Even a perfect prompt injection cannot drop a table.
+
+---
+
+## 📊 Headline Findings
+
+| Finding | Impact | Recommendation |
+|---|---|---|
+| **Standard Class late (38.1%)** | $1.9M goodwill loss (5% churn assumption — flagged as needing CRM calibration) | Pilot upgrade to Second Class for orders >$250 → ~$1.2M savings |
+| **2 of 5 top categories stock-out CRITICAL** (cats 17, 43) | Revenue loss + 2-3× emergency procurement cost | Order 1,981 units total to hit 5% target risk; the other 3 categories show LOW risk and don't need expediting (v1 over-recommended) |
+| **Same Day shipping has 45.7% on-time rate** | Underperforming a premium tier | Fix the carrier SLA before any volume-growth strategy. v1 recommendation to "bundle as free upgrade" needs reconsideration |
+
+Full memo: [`memo/stakeholder_memo.pdf`](memo/stakeholder_memo.pdf).
+
+---
+
+## 📂 Project Structure
 
 ```
 supply-chain-project/
 ├── README.md                    # This file
-├── QUICKSTART.md                # Setup & run instructions
-├── data/
-│   ├── DataCoSupplyChainDataset.csv    # Raw 180K orders (source from Kaggle)
-│   ├── agg_weekly_orders.csv           # Aggregated weekly by category (3.5K rows, notebook input)
-│   ├── weekly_orders_clean.csv         # Same as above + on_time_rate column (Tableau input)
-│   ├── forecast_4w.csv                 # 4-week forecast by category (20 rows, notebook output)
-│   ├── forecast_4w_clean.csv           # Same rows sorted by week then category (Tableau input)
-│   ├── inventory_health.csv            # Stock-out risk flags (5 rows)
-│   ├── model_accuracy.csv              # MAPE metrics per category (5 rows)
-│   ├── operations_kpis.csv             # Top-level KPI summary (gross revenue, total orders)
-│   └── shipping_modes.csv              # Shipping performance by mode (4 rows)
-├── sql/
-│   ├── 00_load_data.sql                # Create raw schema + load CSV into Snowflake
-│   ├── staging/
-│   │   ├── stg_orders.sql              # Clean view: dates, flags, money columns
-│   │   ├── stg_products.sql            # Deduplicated product attributes
-│   │   └── stg_customers.sql           # Deduplicated customer attributes (PII excluded)
-│   ├── marts/
-│   │   ├── dim_date.sql                # Date dimension (1.5K days, 2015–2018)
-│   │   ├── dim_product.sql             # Product dimension (118 products)
-│   │   ├── dim_customer.sql            # Customer dimension with cohort dates (20.6K)
-│   │   ├── fct_orders.sql              # Fact table (180.5K order-item rows)
-│   │   ├── agg_weekly_orders.sql       # Weekly aggregates by category (feeds notebook)
-│   │   └── agg_shipping_scorecard.sql  # Shipping mode × region scorecard (feeds Tableau)
-│   ├── analysis/
-│   │   ├── 01_on_time_delivery_trend.sql       # 4-week moving avg, WoW delta
-│   │   ├── 02_top_categories_revenue.sql       # Revenue rank + YoY growth
-│   │   ├── 03_shipping_mode_performance.sql    # Mode scorecard + goodwill cost
-│   │   ├── 04_customer_segment_profitability.sql # Segment Pareto + cumulative profit
-│   │   ├── 05_regional_performance.sql         # Region rank + late-rate flag
-│   │   └── 06_cohort_repeat_purchase.sql       # Quarterly retention cohorts
-│   └── README.md                       # SQL pipeline walkthrough & execution order
+├── QUICKSTART.md                # 90-minute setup guide
+├── requirements.txt             # All Python deps
+├── run-dbt.sh                   # Loads .env + runs dbt with project-local profiles.yml
+├── dbt_project.yml              # dbt project manifest
+├── profiles.yml                 # Connection config (reads from env vars)
+├── .env.example                 # Template for local credentials (real .env is gitignored)
+│
+├── .github/workflows/
+│   ├── dbt-ci.yml               # Build + test on every PR/push
+│   └── dbt-docs.yml             # Deploy dbt docs to GitHub Pages
+│
+├── models/                      # dbt models
+│   ├── staging/                 # 3 cleaning views (stg_orders, stg_products, stg_customers)
+│   └── marts/                   # 6 production tables (fct_orders, dim_*, agg_*)
+├── macros/is_late.sql           # Reusable late-flag definition (single source of truth)
+├── tests/                       # 3 custom singular tests
+│   ├── assert_revenue_reconciliation.sql
+│   ├── assert_late_flags_drift_within_threshold.sql
+│   └── assert_no_future_orders.sql
+├── analyses/                    # 6 dbt analyses (compiled but not materialized)
+│
+├── forecasting/                 # Custom Python package — Phase 5 rigor pass
+│   ├── data.py                  # Load weekly aggregates, gap-fill
+│   ├── diagnostics.py           # Per-category CV/outliers/structural breaks
+│   ├── models.py                # 4 forecasters behind one interface
+│   ├── cv.py                    # Walk-forward cross-validation
+│   ├── metrics.py               # MAPE/sMAPE/MAE/RMSE
+│   └── risk.py                  # Forecast distribution → stock-out probability
+│
+├── streamlit_app/               # The AI query app (Phase 3)
+│   ├── app.py                   # Main Streamlit UI with dual mode (English / SQL)
+│   ├── snowflake_client.py      # Connection pooling + schema browser
+│   ├── schema_context.py        # Builds LLM prompt from dbt manifest.json + catalog.json
+│   ├── llm_client.py            # OpenAI SDK with prompt caching
+│   ├── safety.py                # SQL safety guards (defense in depth)
+│   └── .streamlit/config.toml   # Navy + amber theme
+│
 ├── notebooks/
-│   ├── forecasting.ipynb               # Prophet model training, backtest & forecast
-│   ├── FORECASTING_EXPLAINED.md        # Methodology deep-dive (Prophet, MAPE, CIs)
-│   └── README.md                       # Notebook setup & execution instructions
-├── tableau/
-│   ├── wireframe.md                    # Dashboard specification (4-page mockup)
-│   ├── TABLEAU_BUILD_GUIDE.md          # Step-by-step Tableau build guide
-│   ├── CONNECTION_STEPS.txt            # Data source connection instructions
-│   ├── dashboard_config.json           # Sheet definitions & layout config
-│   └── create_workbook.py              # Tableau workbook helper (requires pantab)
-├── memo/
-│   ├── stakeholder_memo.pdf            # Executive summary with 3 findings
-│   ├── stakeholder_memo_template.md    # Editable markdown version
-│   └── README.md                       # Memo structure & interpretation guide
-└── .gitignore
+│   ├── forecasting.ipynb        # v1 — original Prophet model (kept for reference)
+│   ├── forecasting_v2.ipynb     # v2 — runs the forecasting/ package end-to-end
+│   ├── FORECASTING_EXPLAINED.md # Methodology deep-dive (v1 vs v2 story)
+│   └── README.md                # Notebook setup
+│
+├── data/                        # Generated outputs (gitignored except a handful)
+│   ├── DataCoSupplyChainDataset.csv    # Raw input from Kaggle
+│   ├── model_comparison.csv            # NEW — median MAPE per (cat × model)
+│   ├── cv_results.csv                  # NEW — per-fold raw CV results
+│   ├── forecast_4w_v2.csv              # NEW — best-model forecast per category
+│   ├── stockout_risk_scores.csv        # NEW — risk-framed deliverable
+│   └── (v1 outputs kept for comparison: forecast_4w.csv, inventory_health.csv, etc.)
+│
+├── target/                      # dbt build artifacts (mostly gitignored)
+│   ├── manifest.json            # Tracked: read by Streamlit's schema_context.py
+│   └── catalog.json             # Tracked: read by Streamlit's schema_context.py
+│
+├── sql/                         # Original SQL pipeline (pre-dbt; kept for reference)
+├── tableau/                     # Wireframe + build guide for the Tableau dashboard
+└── memo/                        # Executive memo + interpretation guide
 ```
 
 ---
 
-## 🚀 Quick Start
+## ⚡ Try the AI App in 30 Seconds
+
+1. Open **[supply-chain-data.streamlit.app](https://supply-chain-data.streamlit.app/)**
+2. Click one of the sample questions, OR type your own:
+   - *"Which 5 categories drove the most profit in 2017?"*
+   - *"Show me the late delivery trend by month for First Class"*
+   - *"What's the average order value by customer segment?"*
+3. Click **✨ Ask**
+4. See the answer as a chart + table. Expand **"🔍 Generated SQL"** to audit the LLM's output.
+
+Cost per question: **~$0.0003** (gpt-4o-mini with prompt caching).
+
+---
+
+## 🛠️ Local Development
 
 ### Prerequisites
-- Snowflake account (free tier OK)
-- Python 3.9+ with pandas, snowflake-connector-python, prophet
-- Tableau Public Desktop (free)
-- Git & GitHub account
 
-### Setup (5 minutes)
+- Python 3.11+
+- A Snowflake account (free trial works)
+- An OpenAI API key (free tier with $5 credit is enough)
 
-1. **Clone repo**
-   ```bash
-   git clone https://github.com/DevashreePawar/supply-chain-project.git
-   cd supply-chain-project
-   ```
+### Setup
 
-2. **Set up Snowflake**
-   ```bash
-   # Create database and load data (see sql/README.md)
-   # Connection string: snowflake://user:password@account/database/schema
-   ```
+```bash
+# 1. Clone
+git clone https://github.com/DevashreePawar/supply-chain-project.git
+cd supply-chain-project
 
-3. **Run forecasting notebook**
-   ```bash
-   jupyter notebook notebooks/forecasting.ipynb
-   # Generates: forecast_4w.csv, inventory_health.csv, model_accuracy.csv
-   ```
+# 2. Python env + deps
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
 
-4. **Open Tableau dashboard** (already live)
-   - [Public Link](https://public.tableau.com/app/profile/devashree.pawar/viz/SupplyChain_17795849723580/Dashboard1)
-   - Or rebuild locally using tableau/CONNECTION_STEPS.txt
+# 3. Snowflake + OpenAI credentials
+cp .env.example .env
+# Edit .env and fill in your real values
 
-### Key Findings
-
-| Finding | Impact | Recommendation |
-|---------|--------|-----------------|
-| **Standard Class late (38%)** | $1.9M goodwill loss | Pilot upgrade to Second Class for orders >$250 → save $1.2M |
-| **Stock-out risk (all top-5)** | Revenue loss + 2-3× procurement cost | Expedite replenishment; raise safety buffer 1.5× → 2.2× |
-| **Same Day underutilized** | Fixed costs on shrinking volume | Bundle as free upgrade for tier-1 metros → +18% volume |
-
-**Full memo:** `memo/stakeholder_memo.pdf`
-
----
-
-## 📈 Architecture & Flow
-
+# 4. Load raw data (one-time)
+# Open sql/00_load_data.sql in Snowflake UI → create schema → load CSV via UI
+# Detailed instructions in QUICKSTART.md
 ```
-Raw Data (CSV)
-    ↓
-Snowflake RAW schema
-    ↓ (01_create_raw_schema.sql)
-Snowflake STAGING schema (cleaned views)
-    ↓ (02_create_staging_schema.sql)
-Snowflake MARTS schema (star schema)
-    ├── FCT_ORDERS (180.5K rows)
-    ├── DIM_DATE (1.5K)
-    ├── DIM_PRODUCT (118)
-    └── DIM_CUSTOMER (20.6K)
-    ↓ (04_analytics_queries.sql)
-Aggregated tables for analysis
-    ├── AGG_WEEKLY_ORDERS (3.5K rows)
-    ├── AGG_SHIPPING_SCORECARD (92 rows)
-    └── (6 total analytical queries)
-    ↓ (Export to CSV)
-Python Notebook (Prophet forecasting)
-    ├── Input: agg_weekly_orders.csv
-    ├── Model: Prophet (trend + seasonality + residual)
-    ├── Backtest: 8-week holdout, MAPE 168-481%
-    └── Output: forecast_4w.csv, inventory_health.csv, model_accuracy.csv
-    ↓ (Connect in Tableau)
-Tableau Public Dashboard
-    ├── Sheet 1: Demand Forecast (line + confidence bands)
-    ├── Sheet 2: Shipping Performance (bar chart)
-    ├── Sheet 3: Inventory Health (table with flags)
-    ├── Sheet 4: Operations Overview (trend lines)
-    └── Dashboard: 2x2 layout with filters
+
+### Daily workflow
+
+```bash
+# Build the dbt project
+./run-dbt.sh build
+
+# Generate docs site
+./run-dbt.sh docs generate
+./run-dbt.sh docs serve     # opens at localhost:8080
+
+# Run the AI app locally
+cd streamlit_app && ../.venv/bin/streamlit run app.py     # localhost:8501
+
+# Run the forecasting notebook
+.venv/bin/jupyter notebook notebooks/forecasting_v2.ipynb
 ```
 
 ---
 
-## 📊 Tableau Dashboard
+## 🧪 Data Quality — How We Catch Bugs
 
-**4-sheet dashboard with drill-down filters:**
+The dbt project has **48 automated tests** that run on every commit via GitHub Actions:
 
-1. **Demand Forecast** — 4-week forecast by category (Prophet model)
-   - Shows forecast ± 80% confidence interval
-   - Reveals demand volatility across top-5 categories
+| Test type | Count | What it catches |
+|---|---|---|
+| `unique` | 6 | Duplicate primary keys |
+| `not_null` | 12 | Missing required fields |
+| `accepted_values` | 4 | Unexpected categorical values (e.g. typo'd shipping mode) |
+| `relationships` | 3 | Foreign key orphans (every customer/product/date in fct_orders exists in its dim) |
+| **Singular (custom)** | 3 | Business-rule violations: |
+| | | • `assert_revenue_reconciliation` — fct_orders total == agg_weekly_orders total |
+| | | • `assert_late_flags_drift_within_threshold` — monitors the documented dual-flag data quality issue |
+| | | • `assert_no_future_orders` — catches date-parsing bugs producing year 9999 |
 
-2. **Shipping Performance** — On-time % by shipping mode
-   - Standard Class: 38.1% (bottleneck)
-   - First Class: 95.3% (best practice)
-   - Same Day: 45.7% (underutilized)
-
-3. **Inventory Health** — Current stock vs. 4-week forecast demand
-   - Color-coded risk flags (🚨 STOCK-OUT for all 5 categories)
-   - Gap = Forecast Demand − Current Stock
-   - Max gap: Category 17 (+1,334 units)
-
-4. **Operations Overview** — Weekly order count & revenue trends
-   - 2014-2018 time series
-   - Peak demand: 2015-2016 ($12M+ weekly)
-   - Current capacity: 60K orders/week
-
-**[View Live Dashboard](https://public.tableau.com/app/profile/devashree.pawar/viz/SupplyChain_17795849723580/Dashboard1)**
+When a test fails, the CI workflow uploads the dbt logs as a downloadable artifact for debugging.
 
 ---
 
-## 🔍 Data Details
+## 🔮 Forecasting — v1 vs v2
 
-### Source Dataset
-- **Dataset:** DataCo Supply Chain Data (Kaggle)
-- **Rows:** 180,519 orders
-- **Date Range:** 2014-2018
-- **Columns:** 31 (order ID, product, customer, shipping, delivery, revenue, etc.)
+**v1** (`notebooks/forecasting.ipynb`): A single Prophet model evaluated on an 8-week holdout. Reported MAPE: 168-481%.
 
-### Snowflake Schema
+**v2** (`forecasting/` package + `notebooks/forecasting_v2.ipynb`): Walk-forward CV across 4 models. Actual median MAPE: **6.7-15.6%**.
 
-**FCT_ORDERS** (fact table, 180.5K rows)
-```
-Order ID | Product Key | Customer Key | Date Key | Quantity | Revenue | On-Time | Late Days | ...
-```
+| Category | Naive | Seasonal Naive | Prophet | SARIMA | **Winner** |
+|---|---|---|---|---|---|
+| 9  | **9.8%** | 14.9% | 12.4% | 15.6% | Naive |
+| 17 | 10.5% | 8.2% | **7.4%** | 10.0% | Prophet (-29.5%) |
+| 24 | **8.4%** | 10.0% | 9.7% | 11.6% | Naive |
+| 43 | 8.7% | 9.3% | 8.6% | **8.4%** | SARIMA (-3.4%) |
+| 45 | **6.7%** | 12.7% | 7.2% | 10.8% | Naive |
 
-**DIM_PRODUCT** (118 unique products)
-```
-Product Key | Product ID | Category | Subcategory | ...
-```
+**Naive wins on 3 of 5 categories.** Prophet adds material value only on category 17. This is exactly the kind of finding walk-forward CV exists to surface.
 
-**DIM_CUSTOMER** (20.6K unique customers)
-```
-Customer Key | Customer ID | Segment (Consumer/Corporate/Home Office) | Region | ...
-```
+The v2 deliverable in `data/stockout_risk_scores.csv` reframes the output from point forecasts to probabilistic risk scores. **2 of 5 categories are CRITICAL stock-out risk; the other 3 are LOW** (v1 said all 5 were at risk — that recommendation would have wasted ~60% of the emergency procurement spend).
 
-**DIM_DATE** (1.5K dates)
-```
-Date Key | Date | Year | Month | Week | Day of Week | ...
-```
-
-### Forecast Model
-
-**Prophet Time Series Decomposition:**
-- **Trend:** Linear drift (demand growing 2014-2016, declining 2016-2018)
-- **Seasonality:** Weekly + yearly patterns (consumer goods seasonality)
-- **Residuals:** High volatility (σ = 481 units, 168-481% MAPE on holdout)
-
-**Why high MAPE?** Consumer goods demand is bursty (promotion-driven, seasonal spikes). Prophet captures trend & seasonality well; residuals are genuine demand shocks (not model error).
-
-**4-week forecast confidence:**
-- **80% interval** = model is 80% confident true demand falls between lower_80 and upper_80
-- **Wider intervals** at category 17 (higher volatility) → larger safety stock needed
+Full methodology: [`notebooks/FORECASTING_EXPLAINED.md`](notebooks/FORECASTING_EXPLAINED.md).
 
 ---
 
-## 📋 SQL Pipeline
+## 🚨 Caveats (Honest Limitations)
 
-### Execution Order
+I'd rather flag these than have an interviewer find them:
 
-1. **Raw landing:** `sql/00_load_data.sql` (create schema + COPY into DATACO_ORDERS)
-2. **Staging (clean):** `sql/staging/stg_orders.sql`, `stg_products.sql`, `stg_customers.sql`
-3. **Dimensions:** `sql/marts/dim_date.sql`, `dim_product.sql`, `dim_customer.sql`
-4. **Fact table:** `sql/marts/fct_orders.sql`
-5. **Aggregates:** `sql/marts/agg_weekly_orders.sql`, `agg_shipping_scorecard.sql`
-6. **Analytics:** `sql/analysis/01_*` through `06_*` (6 queries: delivery, revenue, shipping, segments, regions, cohorts)
-
-See `sql/README.md` for full walkthrough with expected row counts.
-
-### Key Queries
-
-```sql
--- Top 5 categories by revenue
-SELECT category, SUM(revenue) as total_revenue 
-FROM fct_orders 
-GROUP BY category 
-ORDER BY total_revenue DESC 
-LIMIT 5;
--- Result: Cat 45 ($6.9M), 17 ($4.4M), 43 ($4.1M), 9 ($3.7M), 24 ($3.1M)
-
--- On-time delivery by shipping mode
-SELECT shipping_mode, 
-       COUNT(*) as order_count,
-       SUM(CASE WHEN days_late <= 0 THEN 1 ELSE 0 END) / COUNT(*) as on_time_pct
-FROM fct_orders 
-GROUP BY shipping_mode;
--- Result: First Class 95.3%, Standard 38.1%
-```
-
-See `sql/README.md` for full query explanations.
+1. **The "$1.9M goodwill loss" uses a 5% churn assumption.** Common industry heuristic but not calibrated to this company. Production version would replace it with actual churn data from CRM.
+2. **Current inventory is heuristic.** Set to `1.5× trailing 4-week mean` since we don't have a real WMS feed. Production: 1-line change to `pd.read_sql()`.
+3. **The "Naive wins" categories may be sensitive to the last week of data.** If the data tail is anomalously low, Naive's forecast is too conservative. Production: add a "data-tail sanity check" before serving Naive forecasts. Flagged in FORECASTING_EXPLAINED.md.
+4. **Same Day shipping recommendation needs revision.** The original memo suggests bundling Same Day as a free upgrade, but its on-time rate is only 45.7% — the SLA needs to be fixed before any volume play.
+5. **The DataCo dataset is a Kaggle download.** Categories are anonymous numbers (Cat 17, Cat 24). A production version would use real product taxonomies.
 
 ---
 
-## 🐍 Python Notebook
+## 🎓 Skills Demonstrated
 
-### Forecasting Approach
-
-1. **Load data:** `agg_weekly_orders.csv` (3,541 weeks × 5 categories)
-2. **Time series per category:** 145 weeks of history
-3. **Prophet model:**
-   ```python
-   m = Prophet()
-   m.fit(df)
-   forecast = m.make_future_dataframe(periods=4, freq='W')
-   forecast = m.predict(forecast)
-   ```
-4. **Backtest (8-week holdout):** Compute MAPE on held-out data
-5. **Forward forecast:** 4-week projection with 80% confidence intervals
-6. **Inventory flags:** Compare forecast to current stock (gap = demand − stock)
-
-### Outputs
-
-- `forecast_4w.csv` — Week, Category, Forecast, lower_80, upper_80
-- `inventory_health.csv` — Category, Stock, Demand, Gap, Risk Flag
-- `model_accuracy.csv` — Category, MAPE, Model
-
-See `notebooks/FORECASTING_EXPLAINED.md` for full methodology.
+| Domain | Specifics |
+|---|---|
+| **SQL** | Star schema design, window functions (RANK, moving averages, Pareto), cohort analysis, QUALIFY, conditional aggregation |
+| **dbt** | Models, sources, macros, schema tests, custom singular tests, manifest.json introspection |
+| **CI/CD** | GitHub Actions, repo secrets, env-isolated schemas (DBT_CI vs DBT_DEV), GitHub Pages deployment |
+| **Snowflake** | Loading, role/warehouse management, INFORMATION_SCHEMA queries |
+| **Python (Data Science)** | pandas, Prophet, SARIMA (statsmodels), walk-forward CV, MAPE/sMAPE/MAE/RMSE, probabilistic risk scoring |
+| **Python (Engineering)** | Package structure, ABC base classes, dataclasses, type hints, error handling, secrets via dotenv |
+| **AI / LLM** | OpenAI SDK, JSON-mode responses, prompt caching (~50% cost reduction), schema-aware system prompts, defense-in-depth safety |
+| **Streamlit** | `@st.cache_resource` connection pooling, `st.session_state` widget patterns, Altair auto-charting, dual-mode UX |
+| **Tableau** | Dashboard design, calculated fields, dual-axis charts, publishing to Tableau Public |
+| **Communication** | Stakeholder memo (Finding → Why → Recommendation), honest caveats, methodology writeups |
 
 ---
 
-## 📄 Executive Memo
+## 📖 Where to Read More
 
-**3 findings with $ impact:**
-
-1. **Standard Class shipping bottleneck**
-   - 38.1% on-time rate (vs. 95.3% for First Class)
-   - $1.9M estimated goodwill loss over analysis period
-   - **Recommendation:** Pilot upgrade for orders >$250 → $1.2M savings
-
-2. **All top-5 categories at stock-out risk**
-   - 4-week aggregate demand: 6,359 units
-   - Current inventory: 1,546 units
-   - Shortfall: 2,448 units (gap in categories 17, 24, 43)
-   - **Recommendation:** Expedite replenishment; raise safety buffer 1.5× → 2.2×
-
-3. **Same Day shipping underutilized**
-   - Only 5% of orders, but carries 15-20% premium
-   - Declining volume trend
-   - **Recommendation:** Bundle as free upgrade for tier-1 metros → +18% volume
-
-**[Read Full Memo](memo/stakeholder_memo.pdf)**
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Data Warehouse** | Snowflake | 180K orders, SQL transformations |
-| **Transformation** | SQL (Snowflake) | Star schema, aggregations |
-| **Analytics** | Python (Prophet) | Time-series forecasting |
-| **Visualization** | Tableau Public | Interactive dashboard |
-| **Version Control** | Git / GitHub | Reproducibility |
-
----
-
-## 📊 Key Metrics
-
-| Metric | Value |
-|--------|-------|
-| Total orders | 180,519 |
-| Date range | 2014-2018 (4 years) |
-| Gross Revenue | $36.8M |
-| On-time delivery | 45.2% (industry benchmark: 95%+) |
-| Top 5 categories | 67% of revenue |
-| Forecast horizon | 4 weeks |
-| Backtest MAPE | 168-481% (high volatility = genuine demand spikes) |
-| Stock-out risk categories | 5 out of 5 (100%) |
-
----
-
-## 🔗 Links
-
-- **Live Dashboard:** [Tableau Public](https://public.tableau.com/app/profile/devashree.pawar/viz/SupplyChain_17795849723580/Dashboard1)
-- **GitHub:** [supply-chain-project](https://github.com/DevashreePawar/supply-chain-project)
-- **Snowflake Setup:** [sql/README.md](sql/README.md)
-- **Notebook:** [notebooks/forecasting.ipynb](notebooks/forecasting.ipynb)
-- **Memo:** [memo/stakeholder_memo.pdf](memo/stakeholder_memo.pdf)
-
----
-
-## 📝 Next Steps
-
-### For Stakeholders
-1. Review memo findings (stakeholder_memo.pdf)
-2. Explore Tableau dashboard with drill-down filters
-3. Prioritize recommendations by impact:
-   - Standard Class upgrade (quick win, $1.2M)
-   - Inventory replenishment (urgent, prevents stock-outs)
-   - Same Day bundling (strategic, +18% volume)
-
-### For Data Team / Engineers
-1. **Plug in real WMS data:** Replace `1.5× weekly average` with actual inventory levels (1-line change in `notebooks/forecasting.ipynb`)
-2. **Automate pipeline:** Schedule SQL queries weekly + Prophet retraining
-3. **Add real-time dashboard:** Connect Tableau to live Snowflake (currently static CSV exports)
-4. **A/B test recommendations:** Implement pilot changes, measure impact
-
-### For Maintenance
-- Re-run notebook monthly to refresh forecast
-- Monitor forecast MAPE vs. actual demand (current 168-481% is baseline for volatile categories)
-- Update Tableau data sources (currently CSV; can switch to Snowflake direct connection)
-
----
-
-## 📚 File Descriptions
-
-### SQL Pipeline (`sql/`)
-- **00_load_data.sql** — Create SUPPLY_CHAIN database + all schemas; instructions for loading raw CSV into Snowflake
-- **staging/** — Three views that clean and deduplicate the raw table (stg_orders, stg_products, stg_customers)
-- **marts/** — Fact table (fct_orders), 3 dimensions (dim_date, dim_product, dim_customer), 2 aggregates (agg_weekly_orders, agg_shipping_scorecard)
-- **analysis/** — 6 self-contained analytical queries (delivery trend, category revenue, shipping mode, segment profitability, regional performance, cohort retention)
-- **README.md** — Execution guide with expected row counts & sanity checks
-
-### Python Notebooks (`notebooks/`)
-- **forecasting.ipynb** — Prophet model, backtest, forecast, inventory flags
-- **FORECASTING_EXPLAINED.md** — Methodology walkthrough (Prophet decomposition, MAPE interpretation, confidence intervals)
-- **README.md** — Setup & execution instructions
-
-### Tableau (`tableau/`)
-- **wireframe.md** — 4-page dashboard spec with exact chart types, dimensions, measures
-- **TABLEAU_BUILD_GUIDE.md** — 9-phase step-by-step build instructions
-- **CONNECTION_STEPS.txt** — Data source connection + sheet building
-- **dashboard_config.json** — Programmatic sheet definitions
-
-### Documentation (`memo/`)
-- **stakeholder_memo.pdf** — Executive summary (3 findings, $ impact, recommendations)
-- **stakeholder_memo_template.md** — Editable markdown version
-- **README.md** — Memo structure & interpretation
-
----
-
-## 🎓 Learning Outcomes
-
-**Skills Demonstrated:**
-- ✅ SQL: Star schema design, aggregations, window functions
-- ✅ Python: Pandas (data wrangling), Prophet (forecasting)
-- ✅ Snowflake: Data loading (COPY), schema design, query optimization
-- ✅ Tableau: Data connection, sheet building, dashboard layout, publishing
-- ✅ Business Analysis: Finding → Why → Recommendation structure
-
----
-
-## 📧 Contact / Support
-
-Questions? Check the docs first:
-1. SQL pipeline → `sql/README.md`
-2. Forecasting → `notebooks/FORECASTING_EXPLAINED.md`
-3. Tableau → `tableau/TABLEAU_BUILD_GUIDE.md`
-4. Memo interpretation → `memo/README.md`
+| Topic | File |
+|---|---|
+| dbt pipeline walkthrough | [`sql/README.md`](sql/README.md) |
+| Forecasting methodology (v1 vs v2) | [`notebooks/FORECASTING_EXPLAINED.md`](notebooks/FORECASTING_EXPLAINED.md) |
+| Tableau dashboard build guide | [`tableau/TABLEAU_BUILD_GUIDE.md`](tableau/TABLEAU_BUILD_GUIDE.md) |
+| Executive memo & interpretation | [`memo/README.md`](memo/README.md) |
+| Initial setup walkthrough | [`QUICKSTART.md`](QUICKSTART.md) |
 
 ---
 
 ## 📄 License
 
-Public repository. Use as reference for supply chain analytics projects.
+MIT. Use freely as a reference for your own analytics-engineering projects.
 
 ---
 
-**Made with ❤️ by Devashree Pawar | May 2026**
+**Built by [Devashree Pawar](https://github.com/DevashreePawar) · 2026**
