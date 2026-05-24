@@ -30,36 +30,53 @@ Build a **data-driven insights pipeline** that:
 ```
 supply-chain-project/
 ├── README.md                    # This file
-├── QUICKSTART.md               # Setup & run instructions
+├── QUICKSTART.md                # Setup & run instructions
 ├── data/
-│   ├── DataCoSupplyChainDataset.csv    # Raw 180K orders (1.8GB)
-│   ├── agg_weekly_orders.csv           # Aggregated weekly (3.5K rows)
-│   ├── forecast_4w.csv                 # 4-week forecast (20 rows)
+│   ├── DataCoSupplyChainDataset.csv    # Raw 180K orders (source from Kaggle)
+│   ├── agg_weekly_orders.csv           # Aggregated weekly by category (3.5K rows, notebook input)
+│   ├── weekly_orders_clean.csv         # Same as above + on_time_rate column (Tableau input)
+│   ├── forecast_4w.csv                 # 4-week forecast by category (20 rows, notebook output)
+│   ├── forecast_4w_clean.csv           # Same rows sorted by week then category (Tableau input)
 │   ├── inventory_health.csv            # Stock-out risk flags (5 rows)
-│   ├── model_accuracy.csv              # MAPE metrics (5 rows)
-│   └── shipping_modes.csv              # Shipping performance (4 rows)
+│   ├── model_accuracy.csv              # MAPE metrics per category (5 rows)
+│   ├── operations_kpis.csv             # Top-level KPI summary (gross revenue, total orders)
+│   └── shipping_modes.csv              # Shipping performance by mode (4 rows)
 ├── sql/
-│   ├── 01_create_raw_schema.sql        # Landing table (180K rows)
-│   ├── 02_create_staging_schema.sql    # Clean views (STG_*)
-│   ├── 03_create_marts.sql             # Fact & dimension tables
-│   ├── 04_analytics_queries.sql        # 6 analytical queries
-│   └── README.md                       # SQL pipeline walkthrough
+│   ├── 00_load_data.sql                # Create raw schema + load CSV into Snowflake
+│   ├── staging/
+│   │   ├── stg_orders.sql              # Clean view: dates, flags, money columns
+│   │   ├── stg_products.sql            # Deduplicated product attributes
+│   │   └── stg_customers.sql           # Deduplicated customer attributes (PII excluded)
+│   ├── marts/
+│   │   ├── dim_date.sql                # Date dimension (1.5K days, 2015–2018)
+│   │   ├── dim_product.sql             # Product dimension (118 products)
+│   │   ├── dim_customer.sql            # Customer dimension with cohort dates (20.6K)
+│   │   ├── fct_orders.sql              # Fact table (180.5K order-item rows)
+│   │   ├── agg_weekly_orders.sql       # Weekly aggregates by category (feeds notebook)
+│   │   └── agg_shipping_scorecard.sql  # Shipping mode × region scorecard (feeds Tableau)
+│   ├── analysis/
+│   │   ├── 01_on_time_delivery_trend.sql       # 4-week moving avg, WoW delta
+│   │   ├── 02_top_categories_revenue.sql       # Revenue rank + YoY growth
+│   │   ├── 03_shipping_mode_performance.sql    # Mode scorecard + goodwill cost
+│   │   ├── 04_customer_segment_profitability.sql # Segment Pareto + cumulative profit
+│   │   ├── 05_regional_performance.sql         # Region rank + late-rate flag
+│   │   └── 06_cohort_repeat_purchase.sql       # Quarterly retention cohorts
+│   └── README.md                       # SQL pipeline walkthrough & execution order
 ├── notebooks/
-│   ├── forecasting.ipynb               # Prophet model training & backtest
-│   ├── FORECASTING_EXPLAINED.md        # Methodology deep-dive
-│   └── README.md                       # Notebook setup & execution
+│   ├── forecasting.ipynb               # Prophet model training, backtest & forecast
+│   ├── FORECASTING_EXPLAINED.md        # Methodology deep-dive (Prophet, MAPE, CIs)
+│   └── README.md                       # Notebook setup & execution instructions
 ├── tableau/
 │   ├── wireframe.md                    # Dashboard specification (4-page mockup)
-│   ├── TABLEAU_BUILD_GUIDE.md          # 9-phase step-by-step build guide
+│   ├── TABLEAU_BUILD_GUIDE.md          # Step-by-step Tableau build guide
 │   ├── CONNECTION_STEPS.txt            # Data source connection instructions
-│   ├── dashboard_config.json           # Sheet definitions & layout
-│   └── [SupplyChain_*.twbx]            # Tableau workbook (published online)
+│   ├── dashboard_config.json           # Sheet definitions & layout config
+│   └── create_workbook.py              # Tableau workbook helper (requires pantab)
 ├── memo/
 │   ├── stakeholder_memo.pdf            # Executive summary with 3 findings
 │   ├── stakeholder_memo_template.md    # Editable markdown version
-│   └── README.md                       # Memo structure & interpretation
-└── scripts/
-    └── (Python utility scripts, if any)
+│   └── README.md                       # Memo structure & interpretation guide
+└── .gitignore
 ```
 
 ---
@@ -76,7 +93,7 @@ supply-chain-project/
 
 1. **Clone repo**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/supply-chain-project.git
+   git clone https://github.com/devashreepawar/supply-chain-project.git
    cd supply-chain-project
    ```
 
@@ -220,10 +237,14 @@ Date Key | Date | Year | Month | Week | Day of Week | ...
 
 ### Execution Order
 
-1. **Raw landing:** `01_create_raw_schema.sql` (COPY into DATACO_ORDERS)
-2. **Staging (clean):** `02_create_staging_schema.sql` (STG_ORDERS, STG_PRODUCTS, STG_CUSTOMERS)
-3. **Marts (aggregate):** `03_create_marts.sql` (FCT_ORDERS, DIM_*, AGG_*)
-4. **Analytics:** `04_analytics_queries.sql` (6 queries: delivery, revenue, shipping, segments, regions, cohorts)
+1. **Raw landing:** `sql/00_load_data.sql` (create schema + COPY into DATACO_ORDERS)
+2. **Staging (clean):** `sql/staging/stg_orders.sql`, `stg_products.sql`, `stg_customers.sql`
+3. **Dimensions:** `sql/marts/dim_date.sql`, `dim_product.sql`, `dim_customer.sql`
+4. **Fact table:** `sql/marts/fct_orders.sql`
+5. **Aggregates:** `sql/marts/agg_weekly_orders.sql`, `agg_shipping_scorecard.sql`
+6. **Analytics:** `sql/analysis/01_*` through `06_*` (6 queries: delivery, revenue, shipping, segments, regions, cohorts)
+
+See `sql/README.md` for full walkthrough with expected row counts.
 
 ### Key Queries
 
@@ -318,7 +339,7 @@ See `notebooks/FORECASTING_EXPLAINED.md` for full methodology.
 |--------|-------|
 | Total orders | 180,519 |
 | Date range | 2014-2018 (4 years) |
-| Revenue | $34.3M |
+| Gross Revenue | $36.8M |
 | On-time delivery | 45.2% (industry benchmark: 95%+) |
 | Top 5 categories | 67% of revenue |
 | Forecast horizon | 4 weeks |
@@ -330,7 +351,7 @@ See `notebooks/FORECASTING_EXPLAINED.md` for full methodology.
 ## 🔗 Links
 
 - **Live Dashboard:** [Tableau Public](https://public.tableau.com/app/profile/devashree.pawar/viz/SupplyChain_17795849723580/Dashboard1)
-- **GitHub:** [supply-chain-project](https://github.com/YOUR_USERNAME/supply-chain-project)
+- **GitHub:** [supply-chain-project](https://github.com/devashreepawar/supply-chain-project)
 - **Snowflake Setup:** [sql/README.md](sql/README.md)
 - **Notebook:** [notebooks/forecasting.ipynb](notebooks/forecasting.ipynb)
 - **Memo:** [memo/stakeholder_memo.pdf](memo/stakeholder_memo.pdf)
@@ -363,11 +384,11 @@ See `notebooks/FORECASTING_EXPLAINED.md` for full methodology.
 ## 📚 File Descriptions
 
 ### SQL Pipeline (`sql/`)
-- **01_create_raw_schema.sql** — COPY raw CSV into Snowflake landing table
-- **02_create_staging_schema.sql** — Clean, dedupe, cast columns
-- **03_create_marts.sql** — Build star schema (fact + dimensions) + aggregates
-- **04_analytics_queries.sql** — 6 analytical queries (delivery, revenue, shipping, segments, regions, cohorts)
-- **README.md** — Execution guide with row counts & quality checks
+- **00_load_data.sql** — Create SUPPLY_CHAIN database + all schemas; instructions for loading raw CSV into Snowflake
+- **staging/** — Three views that clean and deduplicate the raw table (stg_orders, stg_products, stg_customers)
+- **marts/** — Fact table (fct_orders), 3 dimensions (dim_date, dim_product, dim_customer), 2 aggregates (agg_weekly_orders, agg_shipping_scorecard)
+- **analysis/** — 6 self-contained analytical queries (delivery trend, category revenue, shipping mode, segment profitability, regional performance, cohort retention)
+- **README.md** — Execution guide with expected row counts & sanity checks
 
 ### Python Notebooks (`notebooks/`)
 - **forecasting.ipynb** — Prophet model, backtest, forecast, inventory flags

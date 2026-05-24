@@ -1,5 +1,4 @@
-
-// Tableau Connection Template - Follow these steps:
+Tableau Connection Template - Follow these steps:
 
 1. Open Tableau Public Desktop
 2. Click "Connect to Data" → "Text File"

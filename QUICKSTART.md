@@ -61,8 +61,8 @@ You now have a complete star schema. The rest of the weekend is forecasting + da
 
 - [ ] Open `memo/stakeholder_memo_template.md`
 - [ ] Fill in the <X> placeholders with your actual numbers from the analytical queries
-- [ ] Convert to PDF (any markdown-to-PDF tool)
-- [ ] Place final PDF at root of repo as `stakeholder_memo.pdf`
+- [ ] Convert to PDF (any markdown-to-PDF tool; see `memo/README.md` for pandoc command)
+- [ ] Save final PDF as `memo/stakeholder_memo.pdf` (overwrite the existing placeholder)
 
 ## Ship
 

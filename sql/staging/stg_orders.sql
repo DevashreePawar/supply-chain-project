@@ -29,6 +29,14 @@ SELECT
     DAYS_FOR_SHIPPING_REAL - DAYS_FOR_SHIPMENT_SCHEDULED AS shipping_delay_days,
     DELIVERY_STATUS                                     AS delivery_status,
     LATE_DELIVERY_RISK                                  AS late_delivery_risk_flag,
+    -- NOTE: These two flags use DIFFERENT logic and will disagree on some rows.
+    -- is_late_flag   → derived from the DELIVERY_STATUS string in the raw data.
+    --                  Use this for memo/dashboard numbers; it matches the DataCo
+    --                  dataset's own classification and is what the analysis queries
+    --                  (03_shipping_mode_performance.sql, etc.) are built on.
+    -- is_on_time_flag → derived from the day arithmetic (actual vs scheduled).
+    --                  Use this for time-math-based analysis only.
+    -- Do NOT mix the two flags in the same query or you will get contradictory rates.
     CASE WHEN DELIVERY_STATUS = 'Late delivery' THEN 1 ELSE 0 END
                                                         AS is_late_flag,
     CASE WHEN DAYS_FOR_SHIPPING_REAL <= DAYS_FOR_SHIPMENT_SCHEDULED THEN 1

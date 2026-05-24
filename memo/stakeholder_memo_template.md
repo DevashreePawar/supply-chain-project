@@ -9,7 +9,7 @@
 
 ## TL;DR
 
-Three findings drove most of our Q4 ops cost. Acting on the first two would have saved an estimated **$2.1M** in goodwill cost and reduced late deliveries by ~57 percentage points.
+Three findings drove most of our Q4 ops cost. Acting on Finding 1 alone is estimated to save **$1.2M** in retained revenue over 6 months and reduce late deliveries by ~57 percentage points.
 
 ---
 
@@ -25,11 +25,13 @@ Three findings drove most of our Q4 ops cost. Acting on the first two would have
 
 ## Finding 2 — All top-5 categories face stock-out risk in the next 4 weeks
 
-**What we see:** Our Prophet forecast (4-week horizon, 80% confidence) projects aggregate demand of 6,359 units across top-5 revenue categories. Current inventory is 1,546 units. Stock-out risk is highest in Category 17 (gap: +1,334 units) and Category 24 (gap: +1,161 units). Even Category 45, with the largest inventory, falls short by 313 units.
+**What we see:** Our Prophet forecast (4-week horizon, 80% confidence) projects aggregate demand of 5,429 units across top-5 revenue categories. Current estimated inventory is 1,646 units. Total shortfall is **3,783 units** across all five categories. Stock-out risk is most severe in Category 17 (gap: +1,334 units), Category 24 (gap: +1,161 units), and Category 9 (gap: +693 units). Category 45 and 43 each fall short by 313 and 282 units respectively.
 
-**Why it matters:** Stock-outs kill revenue and trigger emergency procurement at 2-3× cost. Conservative inventory buffer (1.5× weekly average) was insufficient during the 2015-2016 peak demand period.
+**Why it matters:** Stock-outs kill revenue and trigger emergency procurement at 2–3× cost. The current safety buffer (1.5× trailing weekly average) is insufficient for all top categories.
 
-**Recommendation:** Initiate expedited replenishment for Categories 17, 24, and 43 (combined gap: 2,448 units). Use the Prophet 80% confidence upper bound as the target. For future planning, raise the safety stock buffer from 1.5× to 2.2× trailing weekly average based on observed volatility (MAPE 168-481% reflects genuine demand spikes).
+**Recommendation:** Initiate expedited replenishment for Categories 17, 24, and 9 (combined gap: 3,188 units — the three worst). Use the Prophet 80% confidence upper bound (`upper_80`) as the procurement target, not the point forecast. For future planning, raise the safety stock buffer from 1.5× to 2.2× trailing weekly average based on observed demand volatility.
+
+> **Model caveat:** Forecast MAPE is 168–481%, which means point estimates carry high uncertainty. All five categories show a shortfall even under conservative stock assumptions, so the stock-out risk is real — but do not use `forecast_units` directly as an order quantity. Order to the `upper_80` bound.
 
 ---
 

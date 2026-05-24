@@ -54,7 +54,7 @@
         "week"
       ],
       "measures": [
-        "forecast",
+        "forecast_units",
         "lower_80",
         "upper_80"
       ]

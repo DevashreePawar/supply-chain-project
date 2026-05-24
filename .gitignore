@@ -25,7 +25,8 @@ wheels/
 
 # Jupyter
 .ipynb_checkpoints/
-*.ipynb
+# NOTE: do NOT add *.ipynb here — the forecasting notebook is a core deliverable
+# and must be tracked. Only checkpoints are excluded.
 
 # IDEs
 .vscode/
@@ -55,6 +56,11 @@ data/*.csv.orig
 *.twbx
 *.twb
 .tableau_auth.txt
+
+# R artifacts (not used in this project)
+.Rhistory
+.RData
+.Rproj.user/
 
 # Temporary
 *.tmp
