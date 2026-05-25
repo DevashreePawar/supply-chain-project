@@ -91,3 +91,4 @@ models:
       - name: region
         data_tests:
           - not_null
+
